@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Primary palette ────────────────────────────── */
+  --color-primary: #162839;
+  --color-primary-container: #2c3e50;
+  --color-primary-fixed: #d1e4fb;
+  --color-primary-fixed-dim: #b5c8df;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #96a9be;
+  --color-on-primary-fixed: #091d2e;
+  --color-on-primary-fixed-variant: #36485b;
+  --color-inverse-primary: #b5c8df;
+
+  /* ── Secondary palette ──────────────────────────── */
+  --color-secondary: #a23f00;
+  --color-secondary-container: #fc7127;
+  --color-secondary-fixed: #ffdbcd;
+  --color-secondary-fixed-dim: #ffb595;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #5c2000;
+  --color-on-secondary-fixed: #351000;
+  --color-on-secondary-fixed-variant: #7c2e00;
+
+  /* ── Tertiary palette ───────────────────────────── */
+  --color-tertiary: #272725;
+  --color-tertiary-container: #3c3d3a;
+  --color-tertiary-fixed: #e4e2de;
+  --color-tertiary-fixed-dim: #c8c6c3;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #a8a7a4;
+  --color-on-tertiary-fixed: #1b1c1a;
+  --color-on-tertiary-fixed-variant: #474744;
+
+  /* ── Surface / background ───────────────────────── */
+  --color-background: #eefcfd;
+  --color-surface: #eefcfd;
+  --color-surface-bright: #eefcfd;
+  --color-surface-dim: #cfdddd;
+  --color-surface-tint: #4e6073;
+  --color-surface-variant: #d8e5e6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #e9f6f7;
+  --color-surface-container: #e3f0f1;
+  --color-surface-container-high: #ddebec;
+  --color-surface-container-highest: #d8e5e6;
+
+  --color-on-background: #121e1f;
+  --color-on-surface: #121e1f;
+  --color-on-surface-variant: #43474c;
+  --color-inverse-surface: #263334;
+  --color-inverse-on-surface: #e6f3f4;
+
+  /* ── Outline / Error ────────────────────────────── */
+  --color-outline: #74777d;
+  --color-outline-variant: #c4c6cd;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  /* ── Shadows ────────────────────────────────────── */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  /* ── Spacing ────────────────────────────────────── */
+  --spacing-container-max: 1280px;
+  --spacing-gutter: 24px;
+  --spacing-base: 8px;
+  --spacing-margin-desktop: 64px;
+
+  /* ── Typography ─────────────────────────────────── */
+  --font-display-logo: var(--font-anybody);
+  --font-headline-xl: var(--font-montserrat);
+  --font-headline-lg: var(--font-montserrat);
+  --font-headline-md: var(--font-montserrat);
+  --font-body-lg: var(--font-inter);
+  --font-body-md: var(--font-inter);
+  --font-label-bold: var(--font-inter);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+}
+
+/* Aspect ratio utility */
+.aspect-3-4 {
+  aspect-ratio: 3 / 4;
+}
+
+/* Hero gradient */
+.hero-gradient {
+  background: linear-gradient(to right, rgba(22, 40, 57, 0.85), rgba(22, 40, 57, 0.2), transparent);
+}
+
+/* Transition */
+.transition-authoritative {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrollbar hide */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glass panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(22, 40, 57, 0.05);
+}
+
+/* Status pills */
+.status-pill {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Product card hover */
+.product-card:hover .cart-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
