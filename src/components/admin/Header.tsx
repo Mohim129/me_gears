@@ -1,18 +1,31 @@
 'use client';
 
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, PanelLeftOpen } from 'lucide-react';
 
-export default function Header() {
+type HeaderProps = {
+  onToggleSidebar: () => void;
+};
+
+export default function Header({ onToggleSidebar }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md shadow-card h-16 flex items-center justify-between px-8">
-      {/* Search */}
-      <div className="relative w-80">
-        <input
-          type="text"
-          placeholder="Search orders, products..."
-          className="w-full bg-surface-container-low border-0 rounded-xl py-2.5 pl-10 pr-4 text-on-surface focus:ring-2 focus:ring-primary placeholder:text-outline-variant font-body-md transition-all outline-none"
-        />
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
+    <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md shadow-card h-16 flex items-center justify-between px-4 md:px-8">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="md:hidden p-2 rounded-xl hover:bg-surface-container transition-all"
+          aria-label="Toggle sidebar"
+        >
+          <PanelLeftOpen size={22} />
+        </button>
+        <div className="relative w-full md:w-80">
+          <input
+            type="text"
+            placeholder="Search orders, products..."
+            className="w-full bg-surface-container-low border-0 rounded-xl py-2.5 pl-10 pr-4 text-on-surface focus:ring-2 focus:ring-primary placeholder:text-outline-variant font-body-md transition-all outline-none"
+          />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" />
+        </div>
       </div>
 
       {/* Right side */}

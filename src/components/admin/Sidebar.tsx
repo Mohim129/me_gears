@@ -13,6 +13,11 @@ import {
 import { useSession, signOut } from '@/lib/auth-client';
 import Image from 'next/image';
 
+type SidebarProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+};
+
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Inventory', href: '/admin/inventory', icon: Package },
@@ -21,7 +26,7 @@ const NAV_ITEMS = [
   { label: 'Customers', href: '/admin/customers', icon: Users },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -43,11 +48,16 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-primary flex flex-col z-50">
+    <aside
+      className={`fixed top-0 left-0 h-screen w-64 bg-primary flex-col transform transition-transform duration-300 z-50 ${
+        isOpen ? 'translate-x-0 flex' : '-translate-x-full hidden'
+      } md:translate-x-0 md:flex`}
+    >
       {/* Logo */}
       <div className="p-6 border-b border-on-primary/10">
         <Link
           href="/"
+          onClick={onClose}
           className="font-display-logo text-[20px] tracking-[0.3em] text-on-primary"
         >
           ME GEARS
@@ -63,6 +73,7 @@ export default function Sidebar() {
           <Link
             key={href}
             href={href}
+            onClick={onClose}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl font-label-bold text-sm transition-all ${
               isActive(href)
                 ? 'bg-secondary text-on-secondary'
