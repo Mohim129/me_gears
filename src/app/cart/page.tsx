@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Minus, Plus, Trash2, ArrowLeft, ArrowRight, Lock, Truck, RotateCcw, ShoppingBag } from 'lucide-react';
@@ -19,51 +19,129 @@ interface CartItem {
 }
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([
-    {
-      id: 'apex-shell',
-      name: 'Apex Technical Shell',
-      category: 'Outerwear',
-      size: 'L',
-      color: 'Graphite',
-      price: 54450,
-      qty: 1,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBQdBVOB7nuJT7bluq3_-5wlTeWlVA8B41hJqOg5ZV5EPYI6KK-uuH1-mkKH-ULDSjtefXFB1JHuktwliGqU8bi7-KdU06YSvh9_6eVkXzGj2c8_cwFhJ4pQE3pMh6A3LmmOjfEPtmtGujRs7XC8AkxEaRhfP0knNO1b5942yqkt3tnMEnzVmCUPbe3WqHZud7lifUtaLCvlVuieLst6JYoHk1NZjLMSrt2WfbSPWWbQX_mOfhMD_0daw',
-    },
-    {
-      id: 'titan-boots',
-      name: 'Titan Boots',
-      category: 'Footwear',
-      size: '10.5',
-      color: 'Midnight',
-      price: 35200,
-      qty: 1,
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC73HgchiYugH85NalWSCIjsjzXWJr-xNybGbKkx0P79c1M67bDw8-PFGYqgWGXrc1y7YVXFF_R6qmIhQN0D7o4VErafhyJPArCQJvzpGVx3Yal0E0TavqUh4wzGfHFcyXS6D0d8NGIf9xPyKTNqRnRaoQWQy5q5TxRaXwhR1oISrv66yyKv_F1mDucvvjCzDtOYQklusE6FoYSOv3JsWZW-LXfocWqmL-ULtHEITaAf72kt6JI51vl5A',
-    },
-  ]);
-
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
 
-  const updateQty = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newQty = item.qty + delta;
-          return { ...item, qty: newQty > 0 ? newQty : 1 };
-        }
-        return item;
-      })
-    );
+  const fetchCart = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch('/api/cart');
+      if (!res.ok) {
+        throw new Error('Failed to fetch cart');
+      }
+      const json = await res.json();
+      if (json.success) {
+        const mapped = (json.data || []).map((item: any) => ({
+          id: item.productId,
+          name: item.name,
+          category: item.category || 'Gear',
+          size: item.size || 'M',
+          color: item.color || 'Default',
+          price: item.price || 0,
+          qty: item.quantity || 1,
+          image: item.image || '',
+        }));
+        setItems(mapped);
+      } else {
+        throw new Error(json.error || 'Failed to load cart items');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const updateQty = async (id: string, delta: number, currentQty: number, size: string, color: string) => {
+    const newQty = currentQty + delta;
+    if (newQty <= 0) return;
+    
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/cart', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: id, quantity: newQty, size, color }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update quantity');
+      }
+
+      const json = await res.json();
+      if (json.success) {
+        const mapped = (json.data || []).map((item: any) => ({
+          id: item.productId,
+          name: item.name,
+          category: item.category || 'Gear',
+          size: item.size || 'M',
+          color: item.color || 'Default',
+          price: item.price || 0,
+          qty: item.quantity || 1,
+          image: item.image || '',
+        }));
+        setItems(mapped);
+        window.dispatchEvent(new Event('cart-updated'));
+      } else {
+        throw new Error(json.error || 'Failed to update quantity');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error updating quantity.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeItem = async (id: string, size: string, color: string) => {
+    if (!confirm('Are you sure you want to remove this item?')) return;
+    
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/cart', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: id, size, color }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to remove item');
+      }
+
+      const json = await res.json();
+      if (json.success) {
+        const mapped = (json.data || []).map((item: any) => ({
+          id: item.productId,
+          name: item.name,
+          category: item.category || 'Gear',
+          size: item.size || 'M',
+          color: item.color || 'Default',
+          price: item.price || 0,
+          qty: item.quantity || 1,
+          image: item.image || '',
+        }));
+        setItems(mapped);
+        window.dispatchEvent(new Event('cart-updated'));
+      } else {
+        throw new Error(json.error || 'Failed to remove item');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error removing item.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.qty, 0);
   const shipping = items.length > 0 ? 1650 : 0;
-  // Dynamic tax calculation: 8% of subtotal, rounded to nearest 10 for original consistency (e.g. 89650 * 0.08 = 7172 -> 7170)
   const tax = items.length > 0 ? Math.round((subtotal * 0.08) / 10) * 10 : 0;
   const total = subtotal + shipping + tax;
 
@@ -88,7 +166,22 @@ export default function CartPage() {
           </p>
         </header>
 
-        {items.length === 0 ? (
+        {error ? (
+          <div className="text-center py-16 text-error font-body-md bg-rose-50 dark:bg-rose-950/20 border border-rose-200/10 rounded-2xl">
+            <p className="mb-4">{error}</p>
+            <button onClick={fetchCart} className="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-label-bold text-sm cursor-pointer">
+              Retry
+            </button>
+          </div>
+        ) : isLoading && items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-surface-container-lowest rounded-2xl shadow-card border border-outline-variant/30 text-center">
+            <svg className="animate-spin h-8 w-8 text-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-on-surface-variant font-label-bold mt-4">Loading your cart items...</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-surface-container-lowest rounded-2xl shadow-card border border-outline-variant/30 text-center px-4">
             <div className="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center text-primary/60 mb-6">
               <ShoppingBag className="w-8 h-8" />
@@ -101,7 +194,7 @@ export default function CartPage() {
             </p>
             <Link
               href="/shop"
-              className="bg-secondary text-on-secondary font-label-bold px-8 py-3.5 rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2"
+              className="bg-secondary text-on-secondary font-label-bold px-8 py-3.5 rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               Start Shopping
@@ -113,7 +206,7 @@ export default function CartPage() {
             <div className="lg:col-span-8 space-y-6">
               {items.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.id}-${item.size}-${item.color}`}
                   className="flex flex-col sm:flex-row gap-6 p-6 bg-surface-container-lowest rounded-xl shadow-card border border-outline-variant/10 group hover:shadow-md transition-all duration-300"
                 >
                   {/* Image Container with 3:4 Aspect Ratio */}
@@ -150,8 +243,8 @@ export default function CartPage() {
                       {/* Quantity Selector */}
                       <div className="flex items-center border border-outline-variant/30 rounded-lg overflow-hidden bg-surface-container-low">
                         <button
-                          onClick={() => updateQty(item.id, -1)}
-                          className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center"
+                          onClick={() => updateQty(item.id, -1, item.qty, item.size, item.color)}
+                          className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center cursor-pointer"
                           aria-label="Decrease quantity"
                         >
                           <Minus className="w-4 h-4" />
@@ -160,8 +253,8 @@ export default function CartPage() {
                           {item.qty}
                         </span>
                         <button
-                          onClick={() => updateQty(item.id, 1)}
-                          className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center"
+                          onClick={() => updateQty(item.id, 1, item.qty, item.size, item.color)}
+                          className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center cursor-pointer"
                           aria-label="Increase quantity"
                         >
                           <Plus className="w-4 h-4" />
@@ -170,8 +263,8 @@ export default function CartPage() {
 
                       {/* Remove Button */}
                       <button
-                        onClick={() => removeItem(item.id)}
-                        className="flex items-center gap-1.5 text-outline hover:text-error transition-colors font-label-bold text-sm"
+                        onClick={() => removeItem(item.id, item.size, item.color)}
+                        className="flex items-center gap-1.5 text-outline hover:text-error transition-colors font-label-bold text-sm cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                         <span>Remove</span>
@@ -185,7 +278,7 @@ export default function CartPage() {
               <div className="pt-4">
                 <Link
                   href="/shop"
-                  className="inline-flex items-center gap-2.5 font-label-bold text-primary hover:text-secondary transition-colors"
+                  className="inline-flex items-center gap-2.5 font-label-bold text-primary hover:text-secondary transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Continue Shopping
@@ -232,7 +325,7 @@ export default function CartPage() {
                 {/* Checkout CTA */}
                 <Link
                   href="/checkout"
-                  className="w-full bg-secondary hover:opacity-90 py-4 rounded-lg font-label-bold text-on-secondary shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-secondary hover:opacity-90 py-4 rounded-lg font-label-bold text-on-secondary shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Proceed to Checkout</span>
                   <ArrowRight className="w-4 h-4" />
@@ -276,7 +369,7 @@ export default function CartPage() {
                   />
                   <button
                     onClick={handleApplyPromo}
-                    className="px-6 py-2 bg-primary text-on-primary rounded-lg font-label-bold text-sm hover:opacity-90 active:scale-95 transition-all"
+                    className="px-6 py-2 bg-primary text-on-primary rounded-lg font-label-bold text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
                   >
                     Apply
                   </button>

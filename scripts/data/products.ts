@@ -1,4 +1,4 @@
-import { Product } from '@/types';
+﻿import { Product } from '@/types';
 
 export const products: Product[] = [
   {
@@ -21,7 +21,7 @@ export const products: Product[] = [
     specs: [
       '3-layer waterproof membrane (20,000mm rating)',
       'Carbon fiber reinforced shoulders and elbows',
-      'YKK AquaGuard® zippers throughout',
+      'YKK AquaGuard┬« zippers throughout',
       'Laser-cut ventilation zones with mesh backing',
       'Adjustable hood with laminated brim',
       'Internal mesh pockets with cable routing',
@@ -49,9 +49,9 @@ export const products: Product[] = [
     reviewCount: 89,
     isNew: false,
     isLimited: false,
-    description: 'Rugged technical hiking boots with copper-colored metallic accents and industrial laces. Built for both urban exploration and trail performance with a Vibram® outsole.',
+    description: 'Rugged technical hiking boots with copper-colored metallic accents and industrial laces. Built for both urban exploration and trail performance with a Vibram┬« outsole.',
     specs: [
-      'Vibram® Megagrip outsole',
+      'Vibram┬« Megagrip outsole',
       'Full-grain waterproof leather upper',
       'EVA cushioned midsole',
       'Copper-tone metal hardware',
@@ -83,7 +83,7 @@ export const products: Product[] = [
     description: 'A sleek matte black technical backpack with modular attachment points and geometric patterns. Designed for the modern urban nomad with 30 liters of organized storage.',
     specs: [
       '30L capacity with expandable roll-top',
-      '500D Cordura® nylon body',
+      '500D Cordura┬« nylon body',
       'MOLLE-compatible attachment grid',
       'Padded 15" laptop compartment',
       'Water-resistant YKK zippers',

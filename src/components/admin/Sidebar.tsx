@@ -11,6 +11,8 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
+import { useSession, signOut } from '@/lib/auth-client';
+import Image from 'next/image';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -23,10 +25,23 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const name = session?.user?.name || 'Admin Chief';
+  const email = session?.user?.email || 'admin@megears.com';
+  const avatar = session?.user?.image || null;
+
+  const nameParts = name.split(' ');
+  const initials = nameParts.map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'A';
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin';
     return pathname.startsWith(href);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    window.location.href = '/';
   };
 
   return (
@@ -65,15 +80,30 @@ export default function Sidebar() {
       {/* User info */}
       <div className="p-4 border-t border-on-primary/10">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-on-secondary font-label-bold text-sm">
-            AC
-          </div>
+          {avatar ? (
+            <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-md">
+              <Image
+                src={avatar}
+                alt={name}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-on-secondary font-label-bold text-sm">
+              {initials}
+            </div>
+          )}
           <div>
-            <p className="text-on-primary text-sm font-label-bold">Admin Chief</p>
-            <p className="text-on-primary-container text-xs">admin@megears.com</p>
+            <p className="text-on-primary text-sm font-label-bold">{name}</p>
+            <p className="text-on-primary-container text-xs truncate max-w-[150px]">{email}</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 text-on-primary-container hover:text-error text-sm font-label-bold transition-colors w-full px-2 py-1">
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 text-on-primary-container hover:text-error text-sm font-label-bold transition-colors w-full px-2 py-1 text-left cursor-pointer"
+        >
           <LogOut size={16} />
           Sign Out
         </button>

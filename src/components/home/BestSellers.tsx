@@ -73,13 +73,33 @@ const BEST_PRODUCTS: Product[] = [
 ];
 
 export default function BestSellers() {
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1200); // Simulate API loading duration
-    return () => clearTimeout(timer);
+    async function fetchBestSellers() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const res = await fetch('/api/products?sort=oldest&limit=4');
+        if (!res.ok) {
+          throw new Error('Failed to fetch most wanted gear');
+        }
+        const json = await res.json();
+        if (json.success) {
+          setProducts(json.data);
+        } else {
+          throw new Error(json.error || 'Failed to load products');
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'Something went wrong');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchBestSellers();
   }, []);
 
   return (
@@ -89,30 +109,40 @@ export default function BestSellers() {
           Most Wanted
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {isLoading
-            ? Array.from({ length: 4 }).map((_, idx) => (
-                <div 
-                  key={idx} 
-                  className="flex flex-col bg-white rounded-xl overflow-hidden shadow-card p-0 border border-outline/5"
-                >
-                  {/* Skeleton Image Area */}
-                  <Skeleton className="aspect-[3/4] w-full" />
-                  {/* Skeleton Details Area */}
-                  <div className="p-6 flex flex-col gap-3">
-                    <Skeleton className="w-1/2 h-3.5 rounded-lg" />
-                    <Skeleton className="w-3/4 h-5 rounded-lg" />
-                    <Skeleton className="w-1/4 h-4 rounded-lg" />
-                  </div>
+        {error ? (
+          <div className="text-center py-8 text-error font-body-md bg-rose-50 dark:bg-rose-950/20 border border-rose-200/10 rounded-xl">
+            {error}
+          </div>
+        ) : isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div 
+                key={idx} 
+                className="flex flex-col bg-white rounded-xl overflow-hidden shadow-card p-0 border border-outline/5"
+              >
+                <Skeleton className="aspect-[3/4] w-full" />
+                <div className="p-6 flex flex-col gap-3">
+                  <Skeleton className="w-1/2 h-3.5 rounded-lg" />
+                  <Skeleton className="w-3/4 h-5 rounded-lg" />
+                  <Skeleton className="w-1/4 h-4 rounded-lg" />
                 </div>
-              ))
-            : BEST_PRODUCTS.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                />
-              ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12 text-on-surface-variant font-body-md italic bg-surface-container-low rounded-xl border border-outline/5">
+            No products available yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {products.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

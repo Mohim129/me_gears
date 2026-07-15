@@ -3,17 +3,17 @@ import Image from 'next/image';
 
 const categories = [
   {
-    name: 'Men',
+    name: 'Outerwear',
     linkText: 'Explore Collection',
-    href: '#',
+    href: '/shop?category=Outerwear',
     gridSpan: 'md:col-span-8',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCwy4ioCzx7Pjb4BwnlE8TjiUblQavlbgbU1pWpVMnoUrIU-AK7xnwYXAe-IFG-Bqwk2P3bRNLmVVeaj5Awm2Jg_m7DR3I4BbhryXoZiE-KngDurM2ck4fGnGbPTOZihx4eZq0R0-6bRVp5rAwoJXi8RRyboW9ijvPTC1uEJ4JqiWOLEfgH4CuWzzb482UEprSSzHmll-XrR0XkmwOpeeYbG1ncQQ4RhnFOqxmJFhgC7e3MvMYx-V2uFg',
     alt: 'Avant-garde menswear look featuring structured utility vest and slate gray trousers.'
   },
   {
-    name: 'Women',
-    linkText: 'Shop Women',
-    href: '#',
+    name: 'Performance Tops',
+    linkText: 'Shop Performance Tops',
+    href: '/shop?category=Performance%20Tops',
     gridSpan: 'md:col-span-4',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDElaiYY9DZW6qX_ILplpAbfrmMyC4RyAb6nvY_SIHZFwQT1mhlE2_0Ucbk72Kiae6QgauoBypNM_BcXctSOWpv8u9jS5ua4Hmu-cJ3_siqQ1EHguzsyOuIYAMcBPgcEv6luFB05m5AIguEgc3bbGU0qNzmh9mQVV7HYcanBhq4fx9XcArHsqHGLkzrtSsDGkp_1nOtLrukmYzeuTmgbtF4NUsSrWL7Ttj5jp1YBr8Rb3b-H8VJl-rmnQ',
     alt: 'High-end minimalist olive knitwear draped on a warm background.'
@@ -21,15 +21,15 @@ const categories = [
   {
     name: 'Accessories',
     linkText: 'View All',
-    href: '#',
+    href: '/shop?category=Accessories',
     gridSpan: 'md:col-span-4',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCVzglWOsL4F9yONQWGUU4y2R_NgwoUMKlDnFawv0CeMGzRsg8QowtOA2l8JlXtm4GSJV7ezYewSwJWz6k0IhEAXPYE_AzD6YaDAllFGIRw_SK2CEaSbf36mLsahAwQirRe8vnz_tzNjxsEygVzvyF36o_oGnRF-uSwjjhLRTreOW_I1jyjw6q3jJsUJQiWHPfj7WQrlUuB2qSqT4TQGoaUEjOleq7IfGsG2-yWLLbIGSR7CdLQM4lCUQ',
     alt: 'Premium slate gray leather bag with gunmetal hardware detail.'
   },
   {
-    name: 'Shoes',
+    name: 'Footwear',
     linkText: 'Discover More',
-    href: '#',
+    href: '/shop?category=Footwear',
     gridSpan: 'md:col-span-8',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBCB2FHf7TF7_wk1X3z2uRpI1L9KSmBKg-a05Omf2fNVOT6bz6YQxtrJo-5IrWNCCHM7b7su-XoupRwphLtD9nT4Zlke5D4C-juQJio_LtyFy-Duv12OOc8i_OkCl1fOHYe0P8f7AdwlR7h8u55LgKdx3zBVOTbZ6C0uCWnUkbgMlEeyyxeGrxraz24X2xgsVJYNYL7s-4AtApN_-ceqmBye-4LCfXSiSGpKARNjTM7mqxu3OZB1HYTSg',
     alt: 'Technical grayscale sneakers on a concrete texture.'

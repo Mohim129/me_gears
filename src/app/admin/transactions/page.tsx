@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   DollarSign,
@@ -31,80 +31,46 @@ interface TransactionItem {
   status: 'Completed' | 'Pending' | 'Failed' | 'Disputed';
 }
 
-const INITIAL_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: 'TX-802319',
-    orderId: 'ME-90210',
-    customerName: 'Elena Kovic',
-    date: 'Oct 24, 2023',
-    type: 'Sale',
-    amount: 173300,
-    status: 'Completed',
-  },
-  {
-    id: 'TX-802320',
-    orderId: 'ME-90211',
-    customerName: 'Jaxon Wright',
-    date: 'Oct 24, 2023',
-    type: 'Sale',
-    amount: 108600,
-    status: 'Pending',
-  },
-  {
-    id: 'TX-802321',
-    orderId: 'ME-90212',
-    customerName: 'Sarah Sterling',
-    date: 'Oct 23, 2023',
-    type: 'Sale',
-    amount: 256800,
-    status: 'Completed',
-  },
-  {
-    id: 'TX-802322',
-    orderId: 'ME-90213',
-    customerName: 'Riley Thorne',
-    date: 'Oct 23, 2023',
-    type: 'Refund',
-    amount: -41500,
-    status: 'Completed',
-  },
-  {
-    id: 'TX-802323',
-    orderId: 'ME-90209',
-    customerName: 'Marcus Sterling',
-    date: 'Oct 22, 2023',
-    type: 'Adjustment',
-    amount: -12200,
-    status: 'Failed',
-  },
-  {
-    id: 'TX-802324',
-    orderId: 'ME-90208',
-    customerName: 'Alex Jensen',
-    date: 'Oct 22, 2023',
-    type: 'Sale',
-    amount: 9200,
-    status: 'Completed',
-  },
-];
 
-const WEEKLY_DATA = [
-  { day: 'Sun', amount: 320000 },
-  { day: 'Mon', amount: 480000 },
-  { day: 'Tue', amount: 620000 },
-  { day: 'Wed', amount: 510000 },
-  { day: 'Thu', amount: 790000 },
-  { day: 'Fri', amount: 930000 },
-  { day: 'Sat', amount: 410000 },
-];
 
 export default function AdminTransactionsPage() {
-  const [transactions, setTransactions] = useState<TransactionItem[]>(INITIAL_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [weeklyData, setWeeklyData] = useState<{ day: string; amount: number }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [typeFilter, setTypeFilter] = useState<'All' | 'Sale' | 'Refund' | 'Adjustment'>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Completed' | 'Pending' | 'Failed' | 'Disputed'>('All');
   const [dateRange, setDateRange] = useState('All');
 
-  const maxWeeklyAmount = Math.max(...WEEKLY_DATA.map((w) => w.amount));
+  const fetchTransactions = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/transactions');
+      if (!res.ok) {
+        throw new Error('Failed to fetch transactions');
+      }
+      const json = await res.json();
+      if (json.success) {
+        setTransactions(json.data || []);
+        setWeeklyData(json.weeklyData || []);
+      } else {
+        throw new Error(json.error || 'Failed to load ledger');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const maxWeeklyAmount = Math.max(...weeklyData.map((w) => w.amount), 1);
 
   // Filter logic
   const filteredTransactions = transactions.filter((tx) => {
@@ -134,6 +100,9 @@ export default function AdminTransactionsPage() {
     }
   };
 
+  const netRevenue = transactions.reduce((sum, tx) => sum + (tx.status === 'Completed' ? tx.amount : 0), 0);
+  const avgTransaction = transactions.length > 0 ? Math.round(netRevenue / transactions.filter(t => t.status === 'Completed').length || 1) : 0;
+
   return (
     <div className="space-y-8 w-full">
       {/* Page Title & Actions */}
@@ -146,7 +115,7 @@ export default function AdminTransactionsPage() {
         </div>
         <button
           onClick={handleExportReport}
-          className="flex items-center gap-2 px-5 py-3 bg-secondary hover:bg-secondary-container text-on-secondary rounded-xl font-label-bold text-label-bold transition-all duration-300 shadow-md active:scale-95 shrink-0"
+          className="flex items-center gap-2 px-5 py-3 bg-secondary hover:bg-secondary-container text-on-secondary rounded-xl font-label-bold text-label-bold transition-all duration-300 shadow-md active:scale-95 shrink-0 cursor-pointer"
         >
           <Download size={18} />
           <span>Export Financial Report</span>
@@ -165,7 +134,7 @@ export default function AdminTransactionsPage() {
               Net Revenue MTD
             </p>
             <p className="font-headline-lg text-[24px] font-bold text-primary leading-tight">
-              ৳ 4,71,82,300
+              ৳ {netRevenue.toLocaleString('en-IN')}
             </p>
             <p className="text-xs text-emerald-600 font-label-bold mt-2">
               +12.5% vs last month
@@ -183,7 +152,7 @@ export default function AdminTransactionsPage() {
               Avg Transaction
             </p>
             <p className="font-headline-lg text-[24px] font-bold text-primary leading-tight">
-              ৳ 20,075
+              ৳ {avgTransaction.toLocaleString('en-IN')}
             </p>
             <p className="text-xs text-secondary font-label-bold mt-2">
               +4.2% vs last month
@@ -201,7 +170,7 @@ export default function AdminTransactionsPage() {
               Processing Fees
             </p>
             <p className="font-headline-lg text-[24px] font-bold text-primary leading-tight">
-              ৳ 13,69,293
+              ৳ {Math.round(netRevenue * 0.029).toLocaleString('en-IN')}
             </p>
             <p className="text-xs text-outline font-label-bold mt-2">
               Avg. 2.9% + ৳10 flat rate
@@ -219,7 +188,7 @@ export default function AdminTransactionsPage() {
               Refund Rate
             </p>
             <p className="font-headline-lg text-[24px] font-bold text-primary leading-tight">
-              1.42%
+              {transactions.length > 0 ? (transactions.filter(t => t.type === 'Refund').length / transactions.length * 100).toFixed(2) : 0}%
             </p>
             <p className="text-xs text-rose-600 font-label-bold mt-2">
               +0.8% spikes in outerwear
@@ -234,7 +203,7 @@ export default function AdminTransactionsPage() {
           Weekly Transaction Volume (BDT)
         </h3>
         <div className="flex items-end gap-3 h-48 pt-4">
-          {WEEKLY_DATA.map((w, idx) => (
+          {weeklyData.map((w) => (
             <div key={w.day} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
               <div
                 className="w-full bg-primary/70 hover:bg-secondary rounded-t-md transition-colors cursor-pointer"
@@ -302,99 +271,98 @@ export default function AdminTransactionsPage() {
 
         {/* Transactions Table Ledger */}
         <BentoCard className="overflow-hidden p-0 md:p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-low/50 text-[11px] font-label-bold uppercase tracking-widest text-outline border-b border-outline/10">
-                  <th className="px-6 py-4">Transaction ID</th>
-                  <th className="px-6 py-4">Order Link</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline/5 font-body-md">
-                {filteredTransactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-sm text-on-surface-variant italic">
-                      No financial records found matching your filters.
-                    </td>
+          {error ? (
+            <div className="text-center py-12 text-error bg-rose-50 dark:bg-rose-950/20 border border-outline/10 m-6 rounded-xl">
+              {error}
+            </div>
+          ) : isLoading && transactions.length === 0 ? (
+            <div className="p-8 text-center">
+              <svg className="animate-spin h-8 w-8 text-secondary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="mt-4 text-on-surface-variant font-label-bold">Loading transactions ledger...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-low/50 text-[11px] font-label-bold uppercase tracking-widest text-outline border-b border-outline/10">
+                    <th className="px-6 py-4">Transaction ID</th>
+                    <th className="px-6 py-4">Order Link</th>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ) : (
-                  filteredTransactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      {/* TX ID */}
-                      <td className="px-6 py-4 font-label-bold text-primary text-sm">{tx.id}</td>
-
-                      {/* Order Link */}
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/orders/${tx.orderId}`}
-                          className="font-label-bold text-secondary hover:underline text-sm"
-                        >
-                          #{tx.orderId}
-                        </Link>
-                      </td>
-
-                      {/* Customer */}
-                      <td className="px-6 py-4 text-primary font-medium text-sm">{tx.customerName}</td>
-
-                      {/* Date */}
-                      <td className="px-6 py-4 text-on-surface-variant text-sm">{tx.date}</td>
-
-                      {/* Type Badge */}
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-label-bold uppercase tracking-wider ${
-                            tx.type === 'Sale'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : tx.type === 'Refund'
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {tx.type}
-                        </span>
-                      </td>
-
-                      {/* Amount */}
-                      <td
-                        className={`px-6 py-4 font-semibold text-sm ${
-                          tx.amount >= 0 ? 'text-emerald-700' : 'text-rose-700'
-                        }`}
-                      >
-                        {tx.amount >= 0 ? '+' : ''}৳ {tx.amount.toLocaleString('en-IN')}
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                          {getStatusIcon(tx.status)}
-                          <span>{tx.status}</span>
-                        </div>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => alert(`Reviewing transaction details for ${tx.id}...`)}
-                          className="text-xs font-label-bold text-secondary hover:text-secondary-container transition-colors uppercase tracking-wider"
-                        >
-                          Audit
-                        </button>
+                </thead>
+                <tbody className="divide-y divide-outline/5 font-body-md text-sm">
+                  {filteredTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-on-surface-variant italic">
+                        No financial records found matching your filters.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    filteredTransactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-surface-container-low/30 transition-colors">
+                        <td className="px-6 py-4 font-label-bold text-primary">{tx.id}</td>
+                        <td className="px-6 py-4">
+                          <Link
+                            href={`/orders/${tx.orderId}`}
+                            className="font-label-bold text-secondary hover:underline"
+                          >
+                            #{tx.orderId.substring(tx.orderId.length - 8).toUpperCase()}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 text-primary font-medium">{tx.customerName}</td>
+                        <td className="px-6 py-4 text-on-surface-variant">{tx.date}</td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-label-bold uppercase tracking-wider ${
+                              tx.type === 'Sale'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : tx.type === 'Refund'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {tx.type}
+                          </span>
+                        </td>
+                        <td
+                          className={`px-6 py-4 font-semibold ${
+                            tx.amount >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                          }`}
+                        >
+                          {tx.amount >= 0 ? '+' : ''}৳ {tx.amount.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5 text-primary font-medium">
+                            {getStatusIcon(tx.status)}
+                            <span>{tx.status}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right font-semibold">
+                          <button
+                            onClick={() => alert(`Reviewing transaction details for ${tx.id}...`)}
+                            className="text-xs font-label-bold text-secondary hover:text-secondary-container transition-colors uppercase tracking-wider cursor-pointer"
+                          >
+                            Audit
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Static Pagination */}
-          {filteredTransactions.length > 0 && (
+          {!isLoading && filteredTransactions.length > 0 && (
             <div className="px-6 py-4 bg-surface-container-low/30 border-t border-outline/5 flex items-center justify-between">
               <p className="text-xs text-on-surface-variant">
                 Showing 1-{filteredTransactions.length} of {transactions.length} entries

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   SlidersHorizontal,
   Shield,
@@ -44,17 +44,69 @@ export default function AdminSettingsPage() {
 
   // Save changes state simulation
   const [saveStatus, setSaveStatus] = useState<'idle' | 'updating' | 'success'>('idle');
+  const [loading, setLoading] = useState(true);
 
-  const handleSaveChanges = () => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/admin/settings');
+        const json = await res.json();
+        if (json.success) {
+          const data = json.data;
+          setStoreName(data.storeName || DEFAULTS.storeName);
+          setSupportEmail(data.supportEmail || DEFAULTS.supportEmail);
+          setCurrency(data.currency || DEFAULTS.currency);
+          setTwoFactor(Boolean(data.twoFactor));
+          setSessionTimeout(data.sessionTimeout || DEFAULTS.sessionTimeout);
+          setOrderAlerts(Boolean(data.orderAlerts));
+          setInventoryWarnings(Boolean(data.inventoryWarnings));
+          setNewSignups(Boolean(data.newSignups));
+          setTimezone(data.timezone || DEFAULTS.timezone);
+          setLanguage(data.language || DEFAULTS.language);
+        }
+      } catch {
+        // ignore and keep defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  const handleSaveChanges = async () => {
     if (saveStatus !== 'idle') return;
 
     setSaveStatus('updating');
-    setTimeout(() => {
+    try {
+      const payload = {
+        storeName,
+        supportEmail,
+        currency,
+        twoFactor,
+        sessionTimeout,
+        orderAlerts,
+        inventoryWarnings,
+        newSignups,
+        timezone,
+        language,
+      };
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Unable to save settings');
+      }
       setSaveStatus('success');
       setTimeout(() => {
         setSaveStatus('idle');
       }, 2000);
-    }, 800);
+    } catch {
+      setSaveStatus('idle');
+    }
   };
 
   const handleDiscard = () => {
@@ -122,6 +174,10 @@ export default function AdminSettingsPage() {
       `}</style>
 
       {/* Header Section */}
+      {loading ? (
+        <div className="mb-6 text-sm text-on-surface-variant">Loading settings…</div>
+      ) : null}
+
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="font-headline-xl text-headline-xl text-primary mb-2">Terminal Settings</h2>
@@ -227,7 +283,7 @@ export default function AdminSettingsPage() {
                 <span className="slider" />
               </label>
             </div>
-            <div className="h-[1px] bg-outline-variant/10" />
+            <div className="h-px bg-outline-variant/10" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="flex flex-col gap-2">
                 <label className="font-label-bold text-label-bold text-on-surface">Session Timeout</label>

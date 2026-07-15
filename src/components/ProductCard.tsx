@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ShoppingCart } from 'lucide-react';
 import { Product } from '@/types';
 import StarRating from '@/components/StarRating';
+import { useSession } from '@/lib/auth-client';
 
 interface ProductCardProps {
   product: Product;
@@ -12,9 +13,14 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, variant = 'default' }: ProductCardProps) {
+  const { data: session } = useSession();
+  const userRole = (session?.user as { role?: string })?.role || 'user';
+  const isAdmin = userRole === 'admin';
+  const isOutOfStock = product.stock === 0;
+
   return (
     <Link href={`/products/${product.id}`} className="product-card group cursor-pointer block">
-      <div className="relative overflow-hidden rounded-xl aspect-[3/4] mb-4 bg-surface-container-lowest shadow-sm">
+      <div className="relative overflow-hidden rounded-xl aspect-3/4 mb-4 bg-surface-container-lowest shadow-sm">
         <Image
           src={product.image}
           alt={product.name}
@@ -38,18 +44,38 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
             </span>
           </div>
         )}
+        {isOutOfStock && (
+          <div className="absolute top-4 right-4">
+            <span className="bg-rose-600 text-white text-[10px] font-label-bold uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+              Out of Stock
+            </span>
+          </div>
+        )}
 
         {/* Hover Add to Cart button */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          className="cart-btn opacity-0 translate-y-4 absolute bottom-4 left-4 right-4 bg-secondary text-on-secondary py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 hover:bg-secondary-container"
-        >
-          <ShoppingCart size={18} />
-          <span className="font-label-bold">Add to Cart</span>
-        </button>
+        {!isAdmin && (
+          <button
+            disabled={isOutOfStock}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className={`absolute bottom-4 left-4 right-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${
+              isOutOfStock
+                ? 'bg-outline-variant text-on-surface-variant cursor-not-allowed opacity-90 translate-y-0'
+                : 'cart-btn bg-secondary text-on-secondary hover:bg-secondary-container opacity-0 translate-y-4'
+            }`}
+          >
+            {isOutOfStock ? (
+              <span className="font-label-bold">Out of Stock</span>
+            ) : (
+              <>
+                <ShoppingCart size={18} />
+                <span className="font-label-bold">Add to Cart</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="space-y-1">

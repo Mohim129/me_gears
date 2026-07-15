@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, SlidersHorizontal, Download, Eye, Pencil, Trash2, TrendingUp, AlertTriangle, Grid, Search } from 'lucide-react';
+import { Plus, Download, Eye, Pencil, Trash2, TrendingUp, AlertTriangle, Grid, Search, X, Loader2 } from 'lucide-react';
 import StatsCard from '@/components/admin/StatsCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BentoCard from '@/components/ui/BentoCard';
+import { Skeleton } from '@heroui/react';
+import ImageUpload from '@/components/ImageUpload';
 
 interface ProductItem {
   id: string;
@@ -18,64 +20,72 @@ interface ProductItem {
   image: string;
 }
 
-const INITIAL_PRODUCTS: ProductItem[] = [
-  {
-    id: '1',
-    name: 'Apex Shell v2',
-    sku: 'APX-SHL-V2',
-    category: 'Outerwear',
-    price: 60400,
-    stock: 24,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC0fCXkIYg5St9iTFglInWkRDAdTiV2HjpmeE-L5iAVITEHSP-dAQlgNNzxeuWfOCnabWx6WENkQgbfpwUo8eeSmhq9SY1mope63UZii3oMTNbiWGg-NvFC-vo8RdHRoo4Kzmcywjb56OynXQDr_D7ruK1m2sMtvtg1AXDzRkE7cdu1ZLU99R4xqqPwDVePCszxe493Rk6efYDtwFP27JojSeY7UosRKxqMs0nXI4dHp0al6qdb0tP1Pg',
-  },
-  {
-    id: '2',
-    name: 'Titan Boots',
-    sku: 'TTN-BTS-01',
-    category: 'Footwear',
-    price: 34800,
-    stock: 4,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpC73givMwBXIB-9v8kqf1JKu0tXAMxfo21CNe-TSwONmcfNHhAFHdODZdIljCcaCLZOBFzNPZKvzY6HBNBVkIP9-852u9DCMMsAKYKW-JeOXDDNOU0qXgRTdzNTiOW9sMi8_jHL-NZ-AjYnoch3u9ok0VmC4QOkoDN6HLz0xE1_sa1_a0-L0U2IarVmNzw2TIsTTQUtPSWJTnhe4iyStf3rp83orum1qEbuLtP3BD_ok-5hiJw1m8Wg',
-  },
-  {
-    id: '3',
-    name: 'Nomad Pack 30L',
-    sku: 'NMD-PCK-30',
-    category: 'Accessories',
-    price: 23800,
-    stock: 0,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLf-ZnXwTsytBdtgP5YU2VzTOWP-RGG1Mcx36LtlWg9Uu8L5YP4vdyZ44T84J1aba0OfL8um_W4bc7QtPNCP0V-b1ywlCL-rtIy0FnmmjQqpg1LR1orSAg9B65KCLSHSQK75y36N0aUHrJBxIcjbh_6D3Plg2H8criyFOroGcSn-2oiwbMhUfTDo8nzLK3nfJpYSDROgVK0Eap7Gy4yzpaceSlEqmDNjrsWbgpzPeU0cLH6sE9EQdDwg',
-  },
-  {
-    id: '4',
-    name: 'Garrison Utility Shell',
-    sku: 'GRS-UTL-SHL',
-    category: 'Outerwear',
-    price: 29280,
-    stock: 85,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8yVInvAM1nk_qOEa5qvZZBSk-0n_LaWYGFgwCOTDrxi3ZKw4zGINSKw2f_hEOxu_NQ57OEwbujFVDoVsOWNeoUjHzzP0BLhjKEtFqH2GAQLbwv0jVO9kRNpxLOhCJcspGZYS_8CI3wtzdg6WPzJ7a-PdX2YbZc_V7dsoCmQBkt3uWOFeRSmlYIE06SkNlYA0BoiKddCWezYVOAtJPeLrVRoCGTYNMUGdOrINPYi4OZ5MT2mtEtepzcg',
-  },
-  {
-    id: '5',
-    name: 'Vanguard Cargo Pant',
-    sku: 'VNG-CRG-PNT',
-    category: 'Pants',
-    price: 15490,
-    stock: 8,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBe9vbQesLzQ2dD9j3AF3gbzMDsLizI9EsfIUbmyTjEMJyLBaui4rAc7WqiatFwnygnY9gf9ZgAm62qINkPs5jFgaE_dJk4gpz3LYbksZacO1wpP_V8IbrAMWZW-_bjzTe_1ZmrRM_WCqEuHA3IVqPEyGCmgo1UW_tawPAczlr0qglB2LiVy1VnPuBXG6qtChC9UXhr8kWyEYAv5ZoyMNJLl1IrB99EHh8V54xP-o3mtU0hOWBWZ6Fd5Q',
-  },
-];
-
 export default function AdminInventoryPage() {
-  const [productsList, setProductsList] = useState<ProductItem[]>(INITIAL_PRODUCTS);
+  const [productsList, setProductsList] = useState<ProductItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<'All' | 'Men' | 'Women' | 'Accessories'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [exporting, setExporting] = useState(false);
 
+  const fetchInventory = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/inventory');
+      if (!res.ok) {
+        throw new Error('Failed to fetch inventory');
+      }
+      const json = await res.json();
+      if (json.success) {
+        const mapped = (json.data || []).map((p: any) => ({
+          id: p.id || p._id,
+          name: p.name,
+          sku: p.sku || 'N/A',
+          category: p.category || 'Gear',
+          price: p.price || 0,
+          stock: p.stock !== undefined ? p.stock : 0,
+          image: p.image || '',
+        }));
+        setProductsList(mapped);
+      } else {
+        throw new Error(json.error || 'Failed to load products');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
   // Deletion logic
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm('Are you sure you want to delete this product from the inventory?')) {
-      setProductsList((prev) => prev.filter((p) => p.id !== id));
+      try {
+        setIsLoading(true);
+        const res = await fetch(`/api/admin/inventory?id=${id}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) {
+          throw new Error('Failed to delete product from database');
+        }
+        const json = await res.json();
+        if (json.success) {
+          alert('Product deleted successfully.');
+          fetchInventory();
+        } else {
+          throw new Error(json.error || 'Failed to delete product');
+        }
+      } catch (err: any) {
+        alert(err.message || 'Error deleting product.');
+        setIsLoading(false);
+      }
     }
   };
 
@@ -88,6 +98,82 @@ export default function AdminInventoryPage() {
     }, 1000);
   };
 
+  // ── Edit Modal State ──
+  interface EditFormData {
+    id: string;
+    name: string;
+    sku: string;
+    category: string;
+    price: number;
+    stock: number;
+    description: string;
+    image: string;
+    sizes: string[];
+    colors: { name: string; hex: string }[];
+    isNew: boolean;
+    isLimited: boolean;
+  }
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState<EditFormData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const handleEditProduct = async (product: ProductItem) => {
+    // Fetch full product details from the API
+    try {
+      const res = await fetch('/api/admin/inventory');
+      const json = await res.json();
+      if (json.success) {
+        const full = (json.data || []).find(
+          (p: any) => (p.id || p._id) === product.id
+        );
+        setEditForm({
+          id: product.id,
+          name: full?.name || product.name,
+          sku: full?.sku || product.sku,
+          category: full?.category || product.category,
+          price: full?.price ?? product.price,
+          stock: full?.stock ?? product.stock,
+          description: full?.description || '',
+          image: full?.image || product.image,
+          sizes: Array.isArray(full?.sizes) ? full.sizes : [],
+          colors: Array.isArray(full?.colors) ? full.colors : [],
+          isNew: full?.isNew ?? false,
+          isLimited: full?.isLimited ?? false,
+        });
+        setEditError(null);
+        setEditModalOpen(true);
+      }
+    } catch {
+      alert('Failed to load product details.');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editForm) return;
+    setIsSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch('/api/admin/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Failed to update product');
+      }
+      setEditModalOpen(false);
+      setEditForm(null);
+      fetchInventory(); // Refresh list
+    } catch (err: any) {
+      setEditError(err.message || 'Something went wrong');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Category & search logic
   const filteredProducts = productsList.filter((p) => {
     const matchesSearch =
@@ -96,7 +182,7 @@ export default function AdminInventoryPage() {
 
     let matchesTab = true;
     if (activeTab === 'Men') {
-      matchesTab = ['Outerwear', 'Pants'].includes(p.category);
+      matchesTab = ['Outerwear', 'Pants', 'Performance Tops', 'Tactical Bottoms'].includes(p.category);
     } else if (activeTab === 'Women') {
       matchesTab = ['Outerwear', 'Footwear'].includes(p.category);
     } else if (activeTab === 'Accessories') {
@@ -113,6 +199,9 @@ export default function AdminInventoryPage() {
     return 'In Stock';
   };
 
+  const totalVal = productsList.reduce((sum, p) => sum + p.price * p.stock, 0);
+  const lowStockCount = productsList.filter((p) => p.stock <= 10).length;
+
   return (
     <div className="space-y-8 w-full">
       {/* Product Directory Header Toolbar */}
@@ -125,7 +214,7 @@ export default function AdminInventoryPage() {
         </div>
         <Link
           href="/admin/inventory/add"
-          className="flex items-center gap-2 px-5 py-3 bg-secondary hover:bg-secondary-container text-on-secondary rounded-xl font-label-bold text-label-bold transition-all duration-300 shadow-md active:scale-95 shrink-0"
+          className="flex items-center gap-2 px-5 py-3 bg-secondary hover:bg-secondary-container text-on-secondary rounded-xl font-label-bold text-label-bold transition-all duration-300 shadow-md active:scale-95 shrink-0 cursor-pointer"
         >
           <Plus size={18} />
           <span>Add New Product</span>
@@ -133,25 +222,24 @@ export default function AdminInventoryPage() {
       </div>
 
       {/* Quick stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         <StatsCard
           icon={TrendingUp}
           label="Total Inventory Value"
-          value="৳ 15,22,92,600"
-          trend="+4.2%"
+          value={`৳ ${totalVal.toLocaleString('en-IN')}`}
         />
         <StatsCard
           icon={AlertTriangle}
           label="Low Stock Alerts"
-          value="12 Items"
-          alert
+          value={`${lowStockCount} Items`}
+          alert={lowStockCount > 0}
         />
         <StatsCard
           icon={Grid}
-          label="Top Category"
-          value="Outerwear"
+          label="Total Catalog Items"
+          value={productsList.length.toString()}
         />
-      </div>
+      </section>
 
       {/* Filter and search toolbar */}
       <div className="flex flex-col xl:flex-row gap-4 justify-between items-stretch xl:items-center bg-surface-container-lowest p-6 rounded-xl border border-outline/10 shadow-card">
@@ -161,7 +249,7 @@ export default function AdminInventoryPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-label-bold uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-label-bold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === tab
                   ? 'bg-primary text-on-primary shadow-sm'
                   : 'bg-background hover:bg-surface-container text-on-surface-variant border border-outline/10'
@@ -188,7 +276,7 @@ export default function AdminInventoryPage() {
           <button
             onClick={handleExportCSV}
             disabled={exporting}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-surface-container-low hover:bg-surface-container border border-outline/10 rounded-xl text-xs font-label-bold uppercase tracking-wider text-primary transition-all duration-300 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-surface-container-low hover:bg-surface-container border border-outline/10 rounded-xl text-xs font-label-bold uppercase tracking-wider text-primary transition-all duration-300 disabled:opacity-50 cursor-pointer"
           >
             <Download size={14} />
             <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
@@ -198,108 +286,122 @@ export default function AdminInventoryPage() {
 
       {/* Inventory Table inside Bento Card */}
       <BentoCard className="overflow-hidden p-0 md:p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-outline/10 text-outline text-[11px] font-label-bold uppercase tracking-wider bg-surface-container-low/40">
-                <th className="py-4 px-6">Product</th>
-                <th className="py-4 px-4">Category</th>
-                <th className="py-4 px-4">Price</th>
-                <th className="py-4 px-4">Stock Status</th>
-                <th className="py-4 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline/5 font-body-md">
-              {filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-sm text-on-surface-variant italic">
-                    No products found matching your search.
-                  </td>
+        {error ? (
+          <div className="text-center py-12 text-error bg-rose-50 dark:bg-rose-950/20 border border-outline/10 m-6 rounded-xl">
+            {error}
+          </div>
+        ) : isLoading && productsList.length === 0 ? (
+          <div className="p-8 text-center">
+            <svg className="animate-spin h-8 w-8 text-secondary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="mt-4 text-on-surface-variant font-label-bold">Loading inventory items...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-outline/10 text-outline text-[11px] font-label-bold uppercase tracking-wider bg-surface-container-low/40">
+                  <th className="py-4 px-6">Product</th>
+                  <th className="py-4 px-4">Category</th>
+                  <th className="py-4 px-4">Price</th>
+                  <th className="py-4 px-4">Stock Status</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
-              ) : (
-                filteredProducts.map((p) => {
-                  const status = getStockStatus(p.stock);
-                  return (
-                    <tr key={p.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      {/* Product image, name, SKU */}
-                      <td className="py-4 px-6 flex items-center gap-4">
-                        <div className="relative w-12 h-16 rounded overflow-hidden bg-surface-variant shrink-0">
-                          <Image
-                            src={p.image}
-                            alt={p.name}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                          />
-                        </div>
-                        <div>
-                          <p className="font-label-bold text-sm text-primary">{p.name}</p>
-                          <p className="text-xs text-outline font-body-md mt-0.5">SKU: {p.sku}</p>
-                        </div>
-                      </td>
+              </thead>
+              <tbody className="divide-y divide-outline/5 font-body-md">
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-sm text-on-surface-variant italic">
+                      No products found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((p) => {
+                    const status = getStockStatus(p.stock);
+                    return (
+                      <tr key={p.id} className="hover:bg-surface-container-low/30 transition-colors">
+                        {/* Product image, name, SKU */}
+                        <td className="py-4 px-6 flex items-center gap-4">
+                          <div className="relative w-12 h-16 rounded overflow-hidden bg-surface-variant shrink-0">
+                            <Image
+                              src={p.image}
+                              alt={p.name}
+                              fill
+                              className="object-cover"
+                              sizes="48px"
+                            />
+                          </div>
+                          <div>
+                            <p className="font-label-bold text-sm text-primary">{p.name}</p>
+                            <p className="text-xs text-outline font-body-md mt-0.5">SKU: {p.sku}</p>
+                          </div>
+                        </td>
 
-                      {/* Category Badge */}
-                      <td className="py-4 px-4">
-                        <span className="inline-block px-2.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-label-bold">
-                          {p.category}
-                        </span>
-                      </td>
-
-                      {/* Price */}
-                      <td className="py-4 px-4 font-semibold text-primary text-sm">
-                        ৳ {p.price.toLocaleString('en-IN')}
-                      </td>
-
-                      {/* Stock Status Badge & counts */}
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col items-start gap-1">
-                          <StatusBadge status={status} />
-                          <span className="text-[11px] text-outline font-body-md">
-                            {p.stock} units
+                        {/* Category Badge */}
+                        <td className="py-4 px-4">
+                          <span className="inline-block px-2.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-label-bold">
+                            {p.category}
                           </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Row actions */}
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/products/${p.id}`}
-                            target="_blank"
-                            className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
-                            title="Preview on shop"
-                          >
-                            <Eye size={16} />
-                          </Link>
-                          <button
-                            onClick={() => alert(`Edit dialog for product ID ${p.id}`)}
-                            className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
-                            title="Edit metadata"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="p-2 text-on-surface-variant hover:text-error hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors"
-                            title="Delete product"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                        {/* Price */}
+                        <td className="py-4 px-4 font-semibold text-primary text-sm">
+                          ৳ {p.price.toLocaleString('en-IN')}
+                        </td>
+
+                        {/* Stock Status Badge & counts */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col items-start gap-1">
+                            <StatusBadge status={status} />
+                            <span className="text-[11px] text-outline font-body-md">
+                              {p.stock} units
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Row actions */}
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/products/${p.id}`}
+                              target="_blank"
+                              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                              title="Preview on shop"
+                            >
+                              <Eye size={16} />
+                            </Link>
+                            <button
+                              onClick={() => handleEditProduct(p)}
+                              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                              title="Edit metadata"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="p-2 text-on-surface-variant hover:text-error hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors cursor-pointer"
+                              title="Delete product"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Table Pagination */}
-        {filteredProducts.length > 0 && (
+        {!isLoading && filteredProducts.length > 0 && (
           <div className="flex items-center justify-between py-5 px-6 border-t border-outline/10">
             <span className="text-xs text-on-surface-variant font-body-md">
-              Showing 1-{filteredProducts.length} of {filteredProducts.length} items
+              Showing 1-{filteredProducts.length} of {productsList.length} items
             </span>
             <div className="flex items-center gap-2">
               <button className="px-3 py-1.5 border border-outline/10 rounded-lg text-xs font-label-bold text-outline hover:bg-surface-container transition-colors disabled:opacity-40" disabled>
@@ -315,6 +417,201 @@ export default function AdminInventoryPage() {
           </div>
         )}
       </BentoCard>
+
+      {/* ── Edit Product Modal ── */}
+      {editModalOpen && editForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => { setEditModalOpen(false); setEditForm(null); }}
+          />
+
+          {/* Modal Panel */}
+          <div className="relative bg-surface-container rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-outline-variant/20 animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="sticky top-0 bg-surface-container z-10 flex items-center justify-between px-6 py-4 border-b border-outline-variant/20">
+              <h2 className="font-headline-md text-xl text-primary">Edit Product</h2>
+              <button
+                onClick={() => { setEditModalOpen(false); setEditForm(null); }}
+                className="p-2 hover:bg-surface-container-highest rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {editError && (
+                <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 px-4 py-3 rounded-xl text-sm font-label-bold">
+                  {editError}
+                </div>
+              )}
+
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                />
+              </div>
+
+              {/* SKU + Category row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">SKU</label>
+                  <input
+                    type="text"
+                    value={editForm.sku}
+                    onChange={(e) => setEditForm({ ...editForm, sku: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Category</label>
+                  <input
+                    type="text"
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Price + Stock row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Price (৳)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editForm.price}
+                    onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Stock</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editForm.stock}
+                    onChange={(e) => setEditForm({ ...editForm, stock: Number(e.target.value) })}
+                    className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Description</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all resize-none"
+                />
+              </div>
+
+              {/* Sizes */}
+              <div>
+                <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Sizes</label>
+                <input
+                  type="text"
+                  value={editForm.sizes.join(', ')}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      sizes: e.target.value
+                        .split(',')
+                        .map((size) => size.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  placeholder="XS, S, M, L"
+                  className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all"
+                />
+              </div>
+
+              {/* Colors */}
+              <div>
+                <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Colors</label>
+                <textarea
+                  rows={3}
+                  value={editForm.colors.map((color) => `${color.name}:${color.hex}`).join('\n')}
+                  onChange={(e) => {
+                    const parsed = e.target.value
+                      .split('\n')
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .map((line) => {
+                        const [name, hex] = line.split(':');
+                        return { name: name?.trim() || 'Color', hex: hex?.trim() || '#888888' };
+                      });
+                    setEditForm({ ...editForm, colors: parsed });
+                  }}
+                  placeholder="Slate Gray:#2c3e50"
+                  className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-md focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all resize-none"
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-xs font-label-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Product Image</label>
+                <ImageUpload
+                  value={editForm.image}
+                  onUploadComplete={(url) => setEditForm({ ...editForm, image: url })}
+                  onRemove={() => setEditForm({ ...editForm, image: '' })}
+                />
+              </div>
+
+              {/* Flags */}
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editForm.isNew}
+                    onChange={(e) => setEditForm({ ...editForm, isNew: e.target.checked })}
+                    className="w-4 h-4 accent-secondary"
+                  />
+                  <span className="text-sm font-label-bold text-on-surface">New Arrival</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editForm.isLimited}
+                    onChange={(e) => setEditForm({ ...editForm, isLimited: e.target.checked })}
+                    className="w-4 h-4 accent-secondary"
+                  />
+                  <span className="text-sm font-label-bold text-on-surface">Limited Edition</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-surface-container px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
+              <button
+                onClick={() => { setEditModalOpen(false); setEditForm(null); }}
+                disabled={isSaving}
+                className="px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface-variant font-label-bold hover:bg-surface-container-highest transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving || !editForm.name}
+                className="px-6 py-2.5 rounded-xl bg-secondary text-on-secondary font-label-bold hover:bg-secondary-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+              >
+                {isSaving && <Loader2 size={16} className="animate-spin" />}
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

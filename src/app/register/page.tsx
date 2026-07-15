@@ -2,24 +2,39 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { User, Mail, Lock, ShieldCheck, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
+import { signIn, signUp } from '@/lib/auth-client';
+import { Loader2 } from 'lucide-react';
 
 interface FormErrors {
   fullName?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
-  terms?: string;
 }
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState<'error' | 'success'>('error');
+  const [showToast, setShowToast] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const showToastMessage = (msg: string, type: 'error' | 'success' = 'error') => {
+    setToastMsg(msg);
+    setToastType(type);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -31,7 +46,6 @@ export default function RegisterPage() {
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match.';
     }
-    if (!termsAccepted) newErrors.terms = 'You must agree to the Terms of Service.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -40,15 +54,45 @@ export default function RegisterPage() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsLoading(true);
-    // Simulate account creation
-    setTimeout(() => {
+    try {
+      await signUp.email(
+        {
+          name: fullName,
+          email,
+          password,
+          image: photoUrl || undefined,
+        },
+        {
+          onSuccess: () => {
+            showToastMessage('Account created successfully! Redirecting to login...', 'success');
+            setTimeout(() => {
+              router.push('/login');
+            }, 1500);
+          },
+          onError: (ctx) => {
+            showToastMessage(
+              ctx.error?.message || 'Registration failed. Please try again.'
+            );
+          },
+        }
+      );
+    } catch {
+      showToastMessage('An unexpected error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    await signIn.social({
+      provider: 'google',
+      callbackURL: '/',
+    });
   };
 
   const inputBaseClass =
@@ -56,6 +100,19 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen flex overflow-hidden">
+      {/* Toast notification */}
+      {showToast && (
+        <div
+          className={`fixed top-6 right-6 z-[100] px-6 py-4 rounded-xl shadow-lg font-label-bold text-sm transition-all duration-300 ${
+            toastType === 'error'
+              ? 'bg-error text-white'
+              : 'bg-emerald-600 text-white'
+          }`}
+        >
+          {toastMsg}
+        </div>
+      )}
+
       {/* ── Left Side: Background Image with Overlay ── */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
         {/* Dark overlay */}
@@ -179,21 +236,28 @@ export default function RegisterPage() {
                 <div className="relative">
                   <input
                     id="register-password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
                       clearError('password');
                     }}
                     placeholder="••••••••"
-                    className={`${inputBaseClass} ${
+                    className={`${inputBaseClass} pr-20 ${
                       errors.password ? 'border-error' : 'border-outline/10'
                     }`}
                   />
                   <Lock
                     size={18}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/50"
+                    className="absolute right-12 top-1/2 -translate-y-1/2 text-outline/50"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/50 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-error text-xs font-label-bold">{errors.password}</p>
@@ -211,21 +275,28 @@ export default function RegisterPage() {
                 <div className="relative">
                   <input
                     id="register-confirm-password"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => {
                       setConfirmPassword(e.target.value);
                       clearError('confirmPassword');
                     }}
                     placeholder="••••••••"
-                    className={`${inputBaseClass} ${
+                    className={`${inputBaseClass} pr-20 ${
                       errors.confirmPassword ? 'border-error' : 'border-outline/10'
                     }`}
                   />
                   <ShieldCheck
                     size={18}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/50"
+                    className="absolute right-12 top-1/2 -translate-y-1/2 text-outline/50"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/50 hover:text-primary transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 {errors.confirmPassword && (
                   <p className="text-error text-xs font-label-bold">{errors.confirmPassword}</p>
@@ -233,50 +304,48 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Terms */}
-            <div className="space-y-1">
-              <div className="flex items-start gap-3 py-2">
+            {/* Photo URL (optional) */}
+            <div className="space-y-2">
+              <label
+                htmlFor="register-photo"
+                className="font-label-bold text-label-bold text-on-surface-variant"
+              >
+                PHOTO URL <span className="text-outline/50 font-body-md text-xs">(optional)</span>
+              </label>
+              <div className="relative">
                 <input
-                  id="register-terms"
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => {
-                    setTermsAccepted(e.target.checked);
-                    clearError('terms');
-                  }}
-                  className="mt-1 w-5 h-5 rounded border-outline/20 text-secondary focus:ring-secondary/20"
+                  id="register-photo"
+                  type="url"
+                  value={photoUrl}
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  placeholder="https://example.com/your-photo.jpg"
+                  className={`${inputBaseClass} border-outline/10`}
                 />
-                <label
-                  htmlFor="register-terms"
-                  className="text-sm font-body-md text-on-surface-variant leading-tight"
-                >
-                  I agree to the{' '}
-                  <Link href="#" className="text-primary font-label-bold hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="#" className="text-primary font-label-bold hover:underline">
-                    Privacy Policy
-                  </Link>
-                  .
-                </label>
+                <ImageIcon
+                  size={18}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-outline/50"
+                />
               </div>
-              {errors.terms && (
-                <p className="text-error text-xs font-label-bold pl-8">{errors.terms}</p>
-              )}
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-4 rounded-xl font-label-bold shadow-lg transform active:scale-95 transition-all duration-200 uppercase tracking-widest ${
+              className={`w-full py-4 rounded-xl font-label-bold shadow-lg transform active:scale-95 transition-all duration-200 uppercase tracking-widest flex items-center justify-center gap-2 ${
                 isLoading
                   ? 'bg-secondary/70 text-white cursor-not-allowed'
                   : 'bg-secondary text-white hover:bg-on-secondary-fixed-variant'
               }`}
             >
-              {isLoading ? 'Creating account...' : 'Create Account'}
+              {isLoading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </button>
 
             {/* Divider */}
@@ -293,6 +362,7 @@ export default function RegisterPage() {
             <div className="pt-2">
               <button
                 type="button"
+                onClick={handleGoogleSignUp}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-4 border border-outline/10 rounded-xl hover:bg-surface-dim transition-colors"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">

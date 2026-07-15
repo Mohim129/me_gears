@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, ChevronRight, SlidersHorizontal, ArrowRight, Eye, ChevronLeft } from 'lucide-react';
@@ -17,20 +17,53 @@ interface OrderItem {
   total: number;
 }
 
-const MOCK_ORDERS: OrderItem[] = [
-  { id: 'ME-49201-GL', date: 'Nov 12, 2024', status: 'Shipped', total: 50260 },
-  { id: 'ME-48190-KL', date: 'Oct 28, 2024', status: 'Delivered', total: 34770 },
-  { id: 'ME-47321-SL', date: 'Oct 15, 2024', status: 'Confirmed', total: 23790 },
-  { id: 'ME-46294-OL', date: 'Sep 30, 2024', status: 'Pending', total: 60390 },
-  { id: 'ME-45921-PL', date: 'Sep 12, 2024', status: 'Delivered', total: 15490 },
-];
-
 export default function OrderHistoryPage() {
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'All' | 'Active' | 'Completed'>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch('/api/orders');
+      if (!res.ok) {
+        throw new Error('Failed to fetch order history');
+      }
+      const json = await res.json();
+      if (json.success) {
+        const mapped = (json.data || []).map((order: any) => ({
+          id: order.id || order._id,
+          date: order.createdAt
+            ? new Date(order.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'N/A',
+          status: order.status,
+          total: order.amount,
+        }));
+        setOrders(mapped);
+      } else {
+        throw new Error(json.error || 'Failed to load order history');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
   // Filter logic
-  const filteredOrders = MOCK_ORDERS.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     // Search query match
     const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -76,7 +109,7 @@ export default function OrderHistoryPage() {
                 </p>
                 <Link
                   href="/shop?category=outerwear"
-                  className="inline-flex items-center gap-1.5 font-label-bold text-xs uppercase tracking-wider text-secondary hover:text-white transition-colors pt-2 group/btn"
+                  className="inline-flex items-center gap-1.5 font-label-bold text-xs uppercase tracking-wider text-secondary hover:text-white transition-colors pt-2 group/btn cursor-pointer"
                 >
                   <span>Winter Drop</span>
                   <ArrowRight size={12} className="transition-transform group-hover/btn:translate-x-1" />
@@ -90,7 +123,7 @@ export default function OrderHistoryPage() {
             <BentoCard>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                  <h1 className="font-headline-lg text-xl md:text-2xl text-primary">Order History</h1>
+                  <h1 className="font-headline-lg text-xl md:text-2xl text-primary font-bold">Order History</h1>
                   <p className="text-xs md:text-sm text-on-surface-variant font-body-md mt-1">
                     Manage and track your recent orders.
                   </p>
@@ -115,7 +148,7 @@ export default function OrderHistoryPage() {
                   <button
                     key={tab}
                     onClick={() => setFilter(tab)}
-                    className={`px-4 py-2 rounded-xl text-xs font-label-bold uppercase tracking-wider transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-label-bold uppercase tracking-wider transition-all cursor-pointer ${
                       filter === tab
                         ? 'bg-primary text-on-primary shadow-sm'
                         : 'bg-background hover:bg-surface-container text-on-surface-variant border border-outline/10'
@@ -126,29 +159,40 @@ export default function OrderHistoryPage() {
                 ))}
               </div>
 
-              {/* Orders Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-outline/10 text-outline text-[11px] font-label-bold uppercase tracking-wider">
-                      <th className="py-4 px-2">Order ID</th>
-                      <th className="py-4 px-2">Date</th>
-                      <th className="py-4 px-2">Status</th>
-                      <th className="py-4 px-2">Total</th>
-                      <th className="py-4 px-2 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline/5">
-                    {filteredOrders.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-8 text-center text-sm font-body-md text-on-surface-variant italic">
-                          No matching orders found.
-                        </td>
+              {/* Orders Ledger */}
+              {error ? (
+                <div className="text-center py-16 text-error bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-200/10 p-4">
+                  <p className="mb-4">{error}</p>
+                  <button onClick={fetchOrders} className="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-label-bold text-sm cursor-pointer">
+                    Retry
+                  </button>
+                </div>
+              ) : isLoading ? (
+                <div className="space-y-4">
+                  <div className="h-12 w-full bg-surface-container animate-pulse rounded-lg" />
+                  <div className="h-12 w-full bg-surface-container animate-pulse rounded-lg" />
+                  <div className="h-12 w-full bg-surface-container animate-pulse rounded-lg" />
+                </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="py-12 text-center text-sm font-body-md text-on-surface-variant italic">
+                  No orders found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-outline/10 text-outline text-[11px] font-label-bold uppercase tracking-wider">
+                        <th className="py-4 px-2">Order ID</th>
+                        <th className="py-4 px-2">Date</th>
+                        <th className="py-4 px-2">Status</th>
+                        <th className="py-4 px-2">Total</th>
+                        <th className="py-4 px-2 text-right">Actions</th>
                       </tr>
-                    ) : (
-                      filteredOrders.map((order) => (
+                    </thead>
+                    <tbody className="divide-y divide-outline/5">
+                      {filteredOrders.map((order) => (
                         <tr key={order.id} className="hover:bg-surface-container-low/30 transition-colors font-body-md">
-                          <td className="py-4 px-2 font-label-bold text-primary text-sm">#{order.id}</td>
+                          <td className="py-4 px-2 font-label-bold text-primary text-sm">#{order.id.substring(order.id.length - 8).toUpperCase()}</td>
                           <td className="py-4 px-2 text-sm text-on-surface-variant">{order.date}</td>
                           <td className="py-4 px-2">
                             <StatusBadge status={order.status} />
@@ -159,33 +203,33 @@ export default function OrderHistoryPage() {
                           <td className="py-4 px-2 text-right">
                             <Link
                               href={`/orders/${order.id}`}
-                              className="inline-flex items-center gap-1 text-xs font-label-bold text-secondary hover:text-secondary-container transition-colors uppercase tracking-wider"
+                              className="inline-flex items-center gap-1 text-xs font-label-bold text-secondary hover:text-secondary-container transition-colors uppercase tracking-wider cursor-pointer"
                             >
                               <Eye size={12} />
                               <span>Details</span>
                             </Link>
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-              {/* Static Pagination */}
-              {filteredOrders.length > 0 && (
+              {/* Pagination */}
+              {!isLoading && filteredOrders.length > 0 && (
                 <div className="flex items-center justify-between pt-6 border-t border-outline/10 mt-6">
                   <span className="text-xs text-on-surface-variant font-body-md">
-                    Showing 1-{filteredOrders.length} of {filteredOrders.length} orders
+                    Showing 1-{filteredOrders.length} of {orders.length} orders
                   </span>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 border border-outline/10 rounded-lg hover:bg-surface-container cursor-not-allowed opacity-50 transition-colors">
+                    <button className="p-2 border border-outline/10 rounded-lg hover:bg-surface-container cursor-not-allowed opacity-50 transition-colors" disabled>
                       <ChevronLeft size={16} />
                     </button>
                     <button className="px-3 py-1 rounded-lg text-xs font-label-bold bg-primary text-on-primary">
                       1
                     </button>
-                    <button className="p-2 border border-outline/10 rounded-lg hover:bg-surface-container cursor-not-allowed opacity-50 transition-colors">
+                    <button className="p-2 border border-outline/10 rounded-lg hover:bg-surface-container cursor-not-allowed opacity-50 transition-colors" disabled>
                       <ChevronRight size={16} />
                     </button>
                   </div>

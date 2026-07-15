@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, ShoppingBag, Heart, Settings, LogOut } from 'lucide-react';
+import { User, ShoppingBag, Heart, LogOut } from 'lucide-react';
+import { useSession, signOut } from '@/lib/auth-client';
+import Image from 'next/image';
 
 interface SidebarLink {
   label: string;
@@ -14,7 +16,6 @@ const SIDEBAR_LINKS: SidebarLink[] = [
   { label: 'Personal Info', href: '/profile', icon: User },
   { label: 'Order History', href: '/orders', icon: ShoppingBag },
   { label: 'Wishlist', href: '/wishlist', icon: Heart },
-  { label: 'Settings', href: '/profile/settings', icon: Settings },
 ];
 
 interface AccountSidebarProps {
@@ -24,11 +25,19 @@ interface AccountSidebarProps {
 }
 
 export default function AccountSidebar({
-  name = 'Marcus Sterling',
-  initials = 'MS',
+  name: propName,
+  initials: propInitials,
   memberSince = 'Nov 2024',
 }: AccountSidebarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const name = session?.user?.name || propName || 'User';
+  const email = session?.user?.email || '';
+  const avatar = session?.user?.image || null;
+
+  const nameParts = name.split(' ');
+  const initials = nameParts.map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'U';
 
   const isActive = (href: string) => {
     if (href === '/profile') return pathname === '/profile';
@@ -36,15 +45,33 @@ export default function AccountSidebar({
     return pathname === href;
   };
 
+  const handleSignOut = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await signOut();
+    window.location.href = '/';
+  };
+
   return (
     <aside className="w-full md:w-64 lg:w-72 flex-shrink-0 bg-surface-container-lowest border border-outline/10 shadow-card p-6 rounded-xl flex flex-col gap-6">
       {/* Profile Header card in sidebar */}
       <div className="flex flex-col items-center text-center pb-6 border-b border-outline/10">
-        <div className="w-20 h-20 rounded-full bg-primary text-on-primary flex items-center justify-center font-headline-lg text-2xl shadow-md mb-3">
-          {initials}
-        </div>
+        {avatar ? (
+          <div className="relative w-20 h-20 rounded-full overflow-hidden shadow-md mb-3">
+            <Image
+              src={avatar}
+              alt={name}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-primary text-on-primary flex items-center justify-center font-headline-lg text-2xl shadow-md mb-3">
+            {initials}
+          </div>
+        )}
         <h3 className="font-headline-md text-lg text-primary">{name}</h3>
-        <p className="text-xs text-on-surface-variant font-body-md mt-1">Member since {memberSince}</p>
+        <p className="text-xs text-on-surface-variant font-body-md mt-1">{email}</p>
       </div>
 
       {/* Nav Links */}
@@ -70,13 +97,13 @@ export default function AccountSidebar({
         })}
 
         {/* Log Out */}
-        <Link
-          href="/"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl font-label-bold text-sm text-on-surface-variant hover:bg-rose-50 hover:text-error dark:hover:bg-rose-950/20 transition-all mt-4 border-t border-outline/5 pt-4"
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl font-label-bold text-sm text-on-surface-variant hover:bg-rose-50 hover:text-error dark:hover:bg-rose-950/20 transition-all mt-4 border-t border-outline/5 pt-4 text-left w-full cursor-pointer"
         >
           <LogOut size={18} />
           <span>Log Out</span>
-        </Link>
+        </button>
       </nav>
     </aside>
   );

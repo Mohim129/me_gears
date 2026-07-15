@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
 interface BentoCardProps {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
 }
 
