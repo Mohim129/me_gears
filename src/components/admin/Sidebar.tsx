@@ -8,7 +8,6 @@ import {
   Package,
   Users,
   CreditCard,
-  Settings,
   LogOut,
 } from 'lucide-react';
 import { useSession, signOut } from '@/lib/auth-client';
@@ -20,7 +19,6 @@ const NAV_ITEMS = [
   { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { label: 'Transactions', href: '/admin/transactions', icon: CreditCard },
   { label: 'Customers', href: '/admin/customers', icon: Users },
-  { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export default function Sidebar() {

@@ -6,7 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 import { Product } from '@/types';
-import { Skeleton } from '@heroui/react';
 import { useSearchParams } from 'next/navigation';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
@@ -293,11 +292,9 @@ function ShopPageContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-6 gap-y-12">
                 {Array.from({ length: 8 }).map((_, idx) => (
                   <div key={idx} className="flex flex-col gap-4">
-                    <Skeleton className="rounded-xl">
-                      <div className="aspect-[3/4] w-full bg-default-200" />
-                    </Skeleton>
-                    <Skeleton className="w-3/4 h-5 rounded-lg" />
-                    <Skeleton className="w-1/4 h-4 rounded-lg" />
+                    <div className="aspect-[3/4] w-full rounded-xl bg-gray-200 animate-pulse" />
+                    <div className="h-4 w-3/4 rounded bg-gray-200 animate-pulse" />
+                    <div className="h-4 w-1/2 rounded bg-gray-200 animate-pulse" />
                   </div>
                 ))}
               </div>
