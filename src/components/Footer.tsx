@@ -32,13 +32,17 @@ export default function Footer() {
             Company Info
           </h4>
           <ul className="space-y-4">
-            {['Our Story', 'Sustainability', 'Careers', 'Factory Tour'].map((item) => (
-              <li key={item}>
+            {[
+              { label: 'Our Story', href: '/about' },
+              { label: 'Sustainability', href: '/about' },
+              { label: 'Manufacturing', href: '/about' },
+            ].map((item) => (
+              <li key={item.label}>
                 <Link
-                  href="#"
+                  href={item.href}
                   className="text-on-primary-container hover:text-on-primary transition-all block hover:translate-x-1"
                 >
-                  {item}
+                  {item.label}
                 </Link>
               </li>
             ))}
@@ -51,13 +55,19 @@ export default function Footer() {
             Support
           </h4>
           <ul className="space-y-4">
-            {['Size Guide', 'Shipping Policy', 'Returns & Exchanges', 'Track Order'].map((item) => (
-              <li key={item}>
+            {[
+              { label: 'Contact Us', href: '/contact' },
+              { label: 'Size Guide', href: '/shop' },
+              { label: 'Shipping Policy', href: '/contact' },
+              { label: 'Returns & Exchanges', href: '/contact' },
+              { label: 'Track Order', href: '/orders' },
+            ].map((item) => (
+              <li key={item.label}>
                 <Link
-                  href="#"
+                  href={item.href}
                   className="text-on-primary-container hover:text-on-primary transition-all block hover:translate-x-1"
                 >
-                  {item}
+                  {item.label}
                 </Link>
               </li>
             ))}
@@ -92,13 +102,13 @@ export default function Footer() {
         </p>
         <div className="flex gap-8">
           <Link
-            href="#"
+            href="/contact"
             className="text-on-primary-container/60 text-sm font-label-bold hover:text-on-primary transition-colors"
           >
             Privacy Policy
           </Link>
           <Link
-            href="#"
+            href="/contact"
             className="text-on-primary-container/60 text-sm font-label-bold hover:text-on-primary transition-colors"
           >
             Terms of Service

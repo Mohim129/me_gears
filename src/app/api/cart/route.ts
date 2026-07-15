@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const availableStock = Number(product.stock ?? 0);
     const requestedQuantity = Number(quantity ?? 1);
     if (availableStock <= 0 || requestedQuantity > availableStock) {
-      return NextResponse.json({ success: false, error: 'Insufficient stock' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Cannot add more than available stock' }, { status: 400 });
     }
 
     const cart = await db.collection('cart').findOne({ userId: session.user.id });
@@ -71,17 +71,23 @@ export async function POST(request: NextRequest) {
     );
 
     if (existingIdx >= 0) {
-      items[existingIdx].quantity += quantity;
+      const currentQuantity = Number(items[existingIdx].quantity ?? 0);
+      if (currentQuantity + requestedQuantity > availableStock) {
+        return NextResponse.json({ success: false, error: 'Cannot add more than available stock' }, { status: 400 });
+      }
+      items[existingIdx].quantity = currentQuantity + requestedQuantity;
+      items[existingIdx].stock = availableStock;
     } else {
       items.push({
         productId: product._id.toString(),
         name: product.name,
         price: product.price,
-        quantity,
+        quantity: requestedQuantity,
         size: size || product.sizes?.[0] || '',
         color: color || product.colors?.[0]?.name || '',
         image: product.image,
         category: product.category,
+        stock: availableStock,
       });
     }
 
@@ -117,6 +123,21 @@ export async function PATCH(request: NextRequest) {
     }
 
     const items = cart.items || [];
+    let productFilter: Record<string, unknown>;
+    if (ObjectId.isValid(productId) && String(new ObjectId(productId)) === productId) {
+      productFilter = { _id: new ObjectId(productId) };
+    } else {
+      productFilter = { id: productId };
+    }
+    const product = await db.collection('products').findOne(productFilter);
+    if (!product) {
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+    }
+
+    const availableStock = Number(product.stock ?? 0);
+    if (Number(quantity) > availableStock) {
+      return NextResponse.json({ success: false, error: 'Cannot add more than available stock' }, { status: 400 });
+    }
     const idx = items.findIndex(
       (item: { productId: string; size?: string; color?: string }) =>
         item.productId === productId &&
@@ -132,6 +153,7 @@ export async function PATCH(request: NextRequest) {
       items.splice(idx, 1);
     } else {
       items[idx].quantity = quantity;
+      items[idx].stock = availableStock;
     }
 
     await db.collection('cart').updateOne(

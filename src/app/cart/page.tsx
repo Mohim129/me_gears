@@ -16,6 +16,7 @@ interface CartItem {
   price: number;
   qty: number;
   image: string;
+  stock: number;
 }
 
 export default function CartPage() {
@@ -24,6 +25,7 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
+  const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>({});
 
   const fetchCart = async () => {
     try {
@@ -44,6 +46,7 @@ export default function CartPage() {
           price: item.price || 0,
           qty: item.quantity || 1,
           image: item.image || '',
+          stock: Number(item.stock ?? item.product?.stock ?? 0),
         }));
         setItems(mapped);
       } else {
@@ -61,10 +64,17 @@ export default function CartPage() {
     fetchCart();
   }, []);
 
-  const updateQty = async (id: string, delta: number, currentQty: number, size: string, color: string) => {
+  const updateQty = async (id: string, delta: number, currentQty: number, size: string, color: string, maxStock: number) => {
     const newQty = currentQty + delta;
+    const itemKey = `${id}-${size}-${color}`;
     if (newQty <= 0) return;
-    
+    if (delta > 0 && newQty > maxStock) {
+      setQuantityErrors((prev) => ({ ...prev, [itemKey]: maxStock > 0 ? `Only ${maxStock} available` : 'Out of stock' }));
+      return;
+    }
+
+    setQuantityErrors((prev) => ({ ...prev, [itemKey]: '' }));
+
     try {
       setIsLoading(true);
       const res = await fetch('/api/cart', {
@@ -74,7 +84,8 @@ export default function CartPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to update quantity');
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error || 'Failed to update quantity');
       }
 
       const json = await res.json();
@@ -88,6 +99,7 @@ export default function CartPage() {
           price: item.price || 0,
           qty: item.quantity || 1,
           image: item.image || '',
+          stock: Number(item.stock ?? item.product?.stock ?? 0),
         }));
         setItems(mapped);
         window.dispatchEvent(new Event('cart-updated'));
@@ -95,7 +107,7 @@ export default function CartPage() {
         throw new Error(json.error || 'Failed to update quantity');
       }
     } catch (err: any) {
-      alert(err.message || 'Error updating quantity.');
+      setQuantityErrors((prev) => ({ ...prev, [itemKey]: err.message || 'Error updating quantity.' }));
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +139,7 @@ export default function CartPage() {
           price: item.price || 0,
           qty: item.quantity || 1,
           image: item.image || '',
+          stock: Number(item.stock ?? item.product?.stock ?? 0),
         }));
         setItems(mapped);
         window.dispatchEvent(new Event('cart-updated'));
@@ -241,24 +254,32 @@ export default function CartPage() {
 
                     <div className="flex items-center justify-between mt-6">
                       {/* Quantity Selector */}
-                      <div className="flex items-center border border-outline-variant/30 rounded-lg overflow-hidden bg-surface-container-low">
-                        <button
-                          onClick={() => updateQty(item.id, -1, item.qty, item.size, item.color)}
-                          className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center cursor-pointer"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="px-4 py-1.5 font-label-bold text-sm min-w-[3rem] text-center border-x border-outline-variant/20 text-primary">
-                          {item.qty}
-                        </span>
-                        <button
-                          onClick={() => updateQty(item.id, 1, item.qty, item.size, item.color)}
-                          className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center cursor-pointer"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                      <div>
+                        <div className="flex items-center border border-outline-variant/30 rounded-lg overflow-hidden bg-surface-container-low">
+                          <button
+                            onClick={() => updateQty(item.id, -1, item.qty, item.size, item.color, item.stock)}
+                            className="p-2 hover:bg-surface-variant transition-colors text-primary flex items-center justify-center cursor-pointer"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="px-4 py-1.5 font-label-bold text-sm min-w-[3rem] text-center border-x border-outline-variant/20 text-primary">
+                            {item.qty}
+                          </span>
+                          <button
+                            onClick={() => updateQty(item.id, 1, item.qty, item.size, item.color, item.stock)}
+                            disabled={item.qty >= item.stock}
+                            className={`p-2 transition-colors text-primary flex items-center justify-center ${item.qty >= item.stock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-variant cursor-pointer'}`}
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {quantityErrors[`${item.id}-${item.size}-${item.color}`] ? (
+                          <p className="mt-2 text-xs text-error">
+                            {quantityErrors[`${item.id}-${item.size}-${item.color}`]}
+                          </p>
+                        ) : null}
                       </div>
 
                       {/* Remove Button */}

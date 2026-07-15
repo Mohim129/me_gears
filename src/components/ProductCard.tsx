@@ -57,9 +57,33 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
           <button
             type="button"
             disabled={isOutOfStock}
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               e.stopPropagation();
+              if (isOutOfStock) return;
+
+              try {
+                if (!session?.user) {
+                  alert('Please log in to add items to cart.');
+                  return;
+                }
+
+                const res = await fetch('/api/cart', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ productId: product.id, quantity: 1 }),
+                });
+
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                  throw new Error(json.error || 'Failed to add to cart');
+                }
+
+                window.dispatchEvent(new Event('cart-updated'));
+              } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Failed to add to cart';
+                alert(message);
+              }
             }}
             className={`absolute bottom-4 left-4 right-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${
               isOutOfStock
