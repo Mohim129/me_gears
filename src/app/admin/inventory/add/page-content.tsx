@@ -118,11 +118,11 @@ const AdminAddProductPage = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setUploadingAdditional(true);
-      
+
       try {
         const formData = new FormData();
         formData.append('image', file);
-        
+
         const apiKey = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API || 'd5a7aedab2c861ca5dec9ae71691ace7';
         const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
           method: 'POST',
@@ -131,7 +131,7 @@ const AdminAddProductPage = () => {
 
         if (!res.ok) throw new Error('Upload failed');
         const data = await res.json();
-        
+
         if (data.success && data.data?.url) {
           setAdditionalImages((prev) => [...prev, data.data.url]);
         } else {
@@ -182,7 +182,7 @@ const AdminAddProductPage = () => {
     }
 
     setIsSaving(true);
-    
+
     try {
       // Map colors to hex swatches
       const mappedColors = swatches
@@ -402,11 +402,10 @@ const AdminAddProductPage = () => {
                           key={size}
                           type="button"
                           onClick={() => handleSizeToggle(size)}
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center font-label-bold text-xs tracking-wider transition-all border cursor-pointer ${
-                            isSelected
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center font-label-bold text-xs tracking-wider transition-all border cursor-pointer ${isSelected
                               ? 'bg-primary text-on-primary border-primary shadow-sm'
                               : 'bg-background hover:bg-surface-container text-on-surface-variant border-outline/20'
-                          }`}
+                            }`}
                         >
                           {size}
                         </button>
@@ -437,11 +436,10 @@ const AdminAddProductPage = () => {
                       return (
                         <div
                           key={swatch.name}
-                          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-xs font-label-bold ${
-                            isSelected
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all text-xs font-label-bold ${isSelected
                               ? 'border-primary bg-primary/5 ring-1 ring-primary'
                               : 'border-outline/20 bg-background hover:bg-surface-container-low'
-                          }`}
+                            }`}
                         >
                           <button
                             type="button"
@@ -624,18 +622,16 @@ const AdminAddProductPage = () => {
               <button
                 type="button"
                 onClick={() => setStatus('Draft')}
-                className={`px-3 py-1 rounded text-xs font-label-bold transition-all cursor-pointer ${
-                  status === 'Draft' ? 'bg-primary text-on-primary' : 'hover:bg-surface-container text-on-surface-variant'
-                }`}
+                className={`px-3 py-1 rounded text-xs font-label-bold transition-all cursor-pointer ${status === 'Draft' ? 'bg-primary text-on-primary' : 'hover:bg-surface-container text-on-surface-variant'
+                  }`}
               >
                 Draft
               </button>
               <button
                 type="button"
                 onClick={() => setStatus('Active')}
-                className={`px-3 py-1 rounded text-xs font-label-bold transition-all cursor-pointer ${
-                  status === 'Active' ? 'bg-primary text-on-primary' : 'hover:bg-surface-container text-on-surface-variant'
-                }`}
+                className={`px-3 py-1 rounded text-xs font-label-bold transition-all cursor-pointer ${status === 'Active' ? 'bg-primary text-on-primary' : 'hover:bg-surface-container text-on-surface-variant'
+                  }`}
               >
                 Active
               </button>
