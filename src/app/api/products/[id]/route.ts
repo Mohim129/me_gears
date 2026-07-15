@@ -28,6 +28,7 @@ export async function GET(
 
     const data = {
       ...product,
+      stock: typeof product.stock === 'number' ? product.stock : 0,
       id: product._id.toString(),
       _id: product._id.toString(),
     };

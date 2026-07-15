@@ -134,7 +134,7 @@ export default function AdminInventoryPage() {
           sku: full?.sku || product.sku,
           category: full?.category || product.category,
           price: full?.price ?? product.price,
-          stock: full?.stock ?? product.stock,
+          stock: Number(full?.stock ?? product.stock ?? 0),
           description: full?.description || '',
           image: full?.image || product.image,
           sizes: Array.isArray(full?.sizes) ? full.sizes : [],
@@ -158,7 +158,7 @@ export default function AdminInventoryPage() {
       const res = await fetch('/api/admin/inventory', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({ ...editForm, stock: Number(editForm.stock) }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {

@@ -60,6 +60,8 @@ export default function ProductDetailPage() {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isEditingReview, setIsEditingReview] = useState(false);
 
+  const isOutOfStock = !product?.stock || product.stock <= 0;
+
   // Fetch product data
   useEffect(() => {
     async function fetchProduct() {
@@ -480,6 +482,9 @@ export default function ProductDetailPage() {
                   <Plus size={18} />
                 </button>
               </div>
+              <p className="mt-3 text-sm font-label-bold text-on-surface-variant">
+                {isOutOfStock ? 'Out of Stock' : `Only ${product.stock} left in stock`}
+              </p>
             </div>
 
             {/* Action Buttons */}
@@ -487,9 +492,9 @@ export default function ProductDetailPage() {
               <div className="space-y-3 pt-2">
                 <button
                   onClick={handleAddToCart}
-                  disabled={isAddingToCart || product.stock === 0}
+                  disabled={isAddingToCart || isOutOfStock}
                   className={`w-full py-4 rounded-xl font-label-bold text-label-bold tracking-wider flex items-center justify-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
-                    product.stock === 0
+                    isOutOfStock
                       ? 'bg-outline-variant text-on-surface-variant cursor-not-allowed'
                       : cartSuccess
                       ? 'bg-emerald-600 text-white'
@@ -497,7 +502,7 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   <ShoppingCart size={20} />
-                  {product.stock === 0
+                  {isOutOfStock
                     ? 'OUT OF STOCK'
                     : isAddingToCart
                     ? 'ADDING...'

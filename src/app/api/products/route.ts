@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
     // Map _id to id
     const data = products.map((p) => ({
       ...p,
+      stock: typeof p.stock === 'number' ? p.stock : 0,
       id: p._id.toString(),
       _id: p._id.toString(),
     }));

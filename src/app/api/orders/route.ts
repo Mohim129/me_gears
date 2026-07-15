@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { connectDB } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { adjustOrderItemStock } from '@/lib/order-stock';
 
 async function getSession() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -72,11 +72,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Cart is empty' }, { status: 400 });
     }
 
-    const items = cart.items;
+    const items = cart.items as Array<{ productId: string; name?: string; price: number; quantity: number }>;
     const amount = items.reduce(
       (sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity,
       0
     );
+
+    for (const item of items) {
+      const quantity = Number(item.quantity || 1);
+      const productFilter = ObjectId.isValid(item.productId) && String(new ObjectId(item.productId)) === item.productId
+        ? { _id: new ObjectId(item.productId) }
+        : { id: item.productId };
+
+      const product = await db.collection('products').findOne(productFilter);
+      if (!product) {
+        return NextResponse.json(
+          { success: false, error: `Insufficient stock for ${item.name || item.productId}` },
+          { status: 400 }
+        );
+      }
+
+      const currentStock = Number(product.stock ?? 0);
+      if (currentStock < quantity) {
+        return NextResponse.json(
+          { success: false, error: `Insufficient stock for ${product.name || item.name || item.productId}` },
+          { status: 400 }
+        );
+      }
+
+      await db.collection('products').updateOne(productFilter, { $inc: { stock: -quantity } });
+    }
 
     const order = {
       userId: session.user.id,
@@ -91,8 +116,6 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await db.collection('orders').insertOne(order);
-
-    await adjustOrderItemStock(db, items, -1);
 
     // Clear cart
     await db.collection('cart').updateOne(

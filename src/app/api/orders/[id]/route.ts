@@ -3,7 +3,6 @@ import { ObjectId } from 'mongodb';
 import { connectDB } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { adjustOrderItemStock, getStockDelta } from '@/lib/order-stock';
 
 async function getSession() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -95,9 +94,39 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    const delta = getStockDelta(existingOrder.status, status);
-    if (delta !== 0) {
-      await adjustOrderItemStock(db, existingOrder.items || [], delta);
+    const previousStatus = existingOrder.status;
+    const items = (existingOrder.items || []) as Array<{ productId: string; name?: string; quantity: number }>;
+
+    if (status === 'Cancelled' && previousStatus !== 'Cancelled') {
+      for (const item of items) {
+        const quantity = Number(item.quantity || 1);
+        const productFilter = ObjectId.isValid(item.productId) && String(new ObjectId(item.productId)) === item.productId
+          ? { _id: new ObjectId(item.productId) }
+          : { id: item.productId };
+        await db.collection('products').updateOne(productFilter, { $inc: { stock: quantity } });
+      }
+    } else if (status !== 'Cancelled' && previousStatus === 'Cancelled') {
+      for (const item of items) {
+        const quantity = Number(item.quantity || 1);
+        const productFilter = ObjectId.isValid(item.productId) && String(new ObjectId(item.productId)) === item.productId
+          ? { _id: new ObjectId(item.productId) }
+          : { id: item.productId };
+        const product = await db.collection('products').findOne(productFilter);
+        if (!product) {
+          return NextResponse.json(
+            { success: false, error: `Insufficient stock for ${item.name || item.productId}` },
+            { status: 400 }
+          );
+        }
+        const currentStock = Number(product.stock ?? 0);
+        if (currentStock < quantity) {
+          return NextResponse.json(
+            { success: false, error: `Insufficient stock for ${product.name || item.name || item.productId}` },
+            { status: 400 }
+          );
+        }
+        await db.collection('products').updateOne(productFilter, { $inc: { stock: -quantity } });
+      }
     }
 
     const result = await db.collection('orders').updateOne(

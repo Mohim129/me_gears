@@ -16,7 +16,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
   const { data: session } = useSession();
   const userRole = (session?.user as { role?: string })?.role || 'user';
   const isAdmin = userRole === 'admin';
-  const isOutOfStock = product.stock === 0;
+  const isOutOfStock = !product.stock || product.stock <= 0;
 
   return (
     <Link href={`/products/${product.id}`} className="product-card group cursor-pointer block">
@@ -55,6 +55,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
         {/* Hover Add to Cart button */}
         {!isAdmin && (
           <button
+            type="button"
             disabled={isOutOfStock}
             onClick={(e) => {
               e.preventDefault();
