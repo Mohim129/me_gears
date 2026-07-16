@@ -2,6 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { DollarSign, ShoppingCart, Package, AlertTriangle, RotateCcw } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import StatsCard from '@/components/admin/StatsCard';
 import RecentOrdersTable from '@/components/admin/RecentOrdersTable';
 
@@ -116,6 +129,18 @@ export default function AdminDashboard() {
 
   // Month labels helper
   const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+
+  const revenueChartData = stats.monthlyData.map((m: any, i: number) => ({
+    ...m,
+    monthLabel: m.month || MONTH_LABELS[i],
+  }));
+
+  const categoryChartData = stats.categories.map((cat: any) => ({
+    name: cat.label,
+    value: cat.percent ?? 0,
+  }));
+
+  const CHART_COLORS = ['#2563eb', '#f97316', '#14b8a6', '#c084fc', '#facc15', '#fb7185'];
 
   return (
     <div className="space-y-8">
