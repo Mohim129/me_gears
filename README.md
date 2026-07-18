@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ME GEARS
+
+A full-stack e-commerce storefront built with Next.js App Router, React, Tailwind CSS, and MongoDB.
+
+## Project Overview
+
+`ME GEARS` is a shopping platform with:
+
+- Public store pages for browsing products, categories, and product details
+- Customer authentication via email/password and Google login
+- Cart, wishlist, checkout, orders, and profile management
+- Admin dashboard for inventory, orders, transactions, customers, and settings
+- MongoDB backend via API routes and Better Auth for user/session management
+
+## Key Features
+
+- Product browsing and search
+- Add to cart with stock validation
+- Wishlist support
+- Checkout and order history
+- Customer profile and address management
+- Admin inventory management and product upload
+- Admin statistics dashboard and recent orders
+- Image uploads via external upload API key
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Better Auth with MongoDB adapter
+- MongoDB
+- Framer Motion
+- Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Environment variables
+
+Create a `.env` file at the repository root with values like:
+
+```env
+MONGO_DB_URI=your_mongodb_connection_string
+AUTH_DB_NAME=me_gears_db
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_IMAGE_UPLOAD_API=your_imgbb_api_key
+BETTER_AUTH_URL=http://localhost:3000
+```
+
+Notes:
+
+- `AUTH_DB_NAME` defaults to `me_gears_db` when not set.
+- `NEXT_PUBLIC_IMAGE_UPLOAD_API` is used by the admin inventory image upload flow.
+- `BETTER_AUTH_URL` is optional and defaults to `http://localhost:3000` in the proxy configuration.
+
+### Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Seed sample data
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The project includes `scripts/seed.ts` to populate demo users and product data.
 
-## Learn More
+```bash
+npm run seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+> The seed script uses a hardcoded MongoDB Atlas URI in `scripts/seed.ts` and creates demo users for local testing.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Demo Accounts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- User: `demo@megears.com` / `demo123`
+- Admin: `admin@megears.com` / `admin123`
 
-## Deploy on Vercel
+## Available Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `npm run dev` — start the local development server
+- `npm run build` — build the production app
+- `npm run start` — start the built app
+- `npm run lint` — run ESLint
+- `npm run seed` — load sample users, products, and categories into MongoDB
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+- `src/app` — application routes and pages
+- `src/components` — shared UI components
+- `src/lib` — auth and database helpers
+- `src/api` — API route handlers
+- `scripts/seed.ts` — sample database seeding script
+- `public` — static assets
+
+## Notes
+
+- The app uses server-side API routes for cart, orders, products, reviews, and user profile management.
+- Authentication is implemented with `better-auth` and stores sessions in MongoDB.
+- Admin functionality is available under `/admin` once signed in as an admin user.
+
+## Deployment
+
+This app can be deployed to Vercel or any Node.js hosting provider that supports Next.js. Ensure the required environment variables are set in production.
